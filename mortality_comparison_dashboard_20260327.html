@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MM Conference — Mortality Comparative Analysis · Feb 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:       #07090f;
+  --surface:  #0f1520;
+  --surface2: #162030;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.12);
+  --text:     #e8eaf2;
+  --muted:    #6b7590;
+  --dim:      #2a3450;
+
+  --cyan:     #00c8e8;
+  --cyan-lo:  rgba(0,200,232,0.08);
+  --gold:     #d4a843;
+  --gold-lo:  rgba(212,168,67,0.08);
+  --red:      #e85050;
+  --red-lo:   rgba(232,80,80,0.08);
+  --green:    #40c880;
+  --green-lo: rgba(64,200,128,0.08);
+  --purple:   #a070f0;
+  --purple-lo:rgba(160,112,240,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 0%, rgba(0,200,232,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 85% 100%, rgba(212,168,67,0.04) 0%, transparent 60%);
+}
+
+/* ─── HEADER ─── */
+.site-header {
+  padding: 32px 48px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  background: rgba(7,9,15,0.92);
+  backdrop-filter: blur(16px);
+  z-index: 200;
+}
+.header-left {}
+.site-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.site-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
+}
+.site-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  line-height: 1;
+}
+.site-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.header-badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.hbadge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px solid;
+}
+.hbadge-focus  { color: var(--cyan);   border-color: rgba(0,200,232,0.3);   background: var(--cyan-lo); }
+.hbadge-warn   { color: var(--gold);   border-color: rgba(212,168,67,0.3);  background: var(--gold-lo); }
+
+/* ─── NAV TABS ─── */
+.nav-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 48px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 89px;
+  z-index: 190;
+  overflow-x: auto;
+}
+.nav-tab {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 14px 20px 12px;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+/* ─── PAGE LAYOUT ─── */
+.page { display: none; padding: 40px 48px 80px; }
+.page.active { display: block; }
+
+/* ─── SECTION ─── */
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ─── KPI GRID ─── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.kpi-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.kpi-card.cyan::before   { background: var(--cyan); }
+.kpi-card.gold::before   { background: var(--gold); }
+.kpi-card.red::before    { background: var(--red); }
+.kpi-card.green::before  { background: var(--green); }
+.kpi-card.purple::before { background: var(--purple); }
+
+.kpi-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.kpi-value { font-family: 'Syne', sans-serif; font-size: 38px; font-weight: 700; line-height: 1; color: var(--text); }
+.kpi-value.sm { font-size: 22px; padding-top: 6px; }
+.kpi-value.xs { font-size: 17px; padding-top: 10px; }
+.kpi-sub { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+.kpi-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-top: 6px;
+}
+.delta-up   { background: rgba(232,80,80,0.12);   color: var(--red);   }
+.delta-down { background: rgba(64,200,128,0.12);  color: var(--green); }
+.delta-same { background: rgba(107,117,144,0.12); color: var(--muted); }
+
+/* ─── COMPARISON GRID ─── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.compare-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+}
+.compare-card.highlight {
+  border-color: rgba(0,200,232,0.25);
+  background: rgba(0,200,232,0.03);
+}
+.compare-period {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.compare-period .dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-cyan   { background: var(--cyan); box-shadow: 0 0 5px var(--cyan); }
+.dot-gold   { background: var(--gold); }
+.dot-purple { background: var(--purple); }
+.compare-n {
+  font-family: 'Syne', sans-serif;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.compare-n-label { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.compare-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.compare-row:last-child { border-bottom: none; }
+.compare-key { color: var(--muted); font-size: 12px; }
+.compare-val { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); }
+
+/* ─── CHART CARDS ─── */
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.chart-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+.chart-grid.single { grid-template-columns: 1fr; }
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+}
+.chart-card.span2 { grid-column: span 2; }
+.chart-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.chart-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 18px; }
+.chart-wrap { position: relative; height: 220px; }
+.chart-wrap.tall { height: 280px; }
+.chart-wrap.short { height: 160px; }
+
+/* ─── DIAG BARS ─── */
+.diag-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.diag-row {}
+.diag-top { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+.diag-name { color: var(--text); }
+.diag-count { font-family: 'DM Mono', monospace; color: var(--muted); }
+.diag-track { height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+.diag-fill { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
+
+/* ─── COMORBIDITY BARS ─── */
+.comorbid-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.comorbid-section-title {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 14px;
+}
+.bar-row { margin-bottom: 10px; }
+.bar-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+.bar-name { color: var(--text); }
+.bar-val { font-family: 'DM Mono', monospace; color: var(--muted); }
+.bar-track { height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
+.no-data-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+/* ─── CASE TABLE ─── */
+.case-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.tag {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  margin: 1px 2px 1px 0;
+}
+.tag-dept  { background: var(--gold-lo);   color: var(--gold);   border: 1px solid rgba(212,168,67,0.2); }
+.tag-yes   { background: var(--red-lo);    color: var(--red);    border: 1px solid rgba(232,80,80,0.2); }
+.tag-f     { background: var(--green-lo);  color: var(--green);  border: 1px solid rgba(64,200,128,0.2); }
+.tag-m     { background: var(--cyan-lo);   color: var(--cyan);   border: 1px solid rgba(0,200,232,0.2); }
+.los-pill  { display: inline-block; padding: 2px 7px; border-radius: 3px; font-family: 'DM Mono', monospace; font-size: 10px; }
+.los-s { background: var(--green-lo);  color: var(--green);  border: 1px solid rgba(64,200,128,0.2); }
+.los-m { background: var(--gold-lo);   color: var(--gold);   border: 1px solid rgba(212,168,67,0.2); }
+.los-l { background: var(--red-lo);    color: var(--red);    border: 1px solid rgba(232,80,80,0.2); }
+
+/* ─── TREND TABLE ─── */
+.trend-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.trend-table th { text-align: center; padding: 8px 10px; background: var(--surface2); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+.trend-table th:first-child { text-align: left; }
+.trend-table td { text-align: center; padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: 'DM Mono', monospace; }
+.trend-table td:first-child { text-align: left; color: var(--text); }
+.trend-table tr.highlight-row td { background: rgba(0,200,232,0.04); }
+.trend-table tr.highlight-row td:first-child { color: var(--cyan); }
+.cell-high { color: var(--red); }
+.cell-low  { color: var(--green); }
+.cell-mid  { color: var(--text); }
+.cell-na   { color: var(--dim); }
+
+/* ─── INSIGHT BOX ─── */
+.insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px; }
+.insight-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.insight-box.full { grid-column: span 2; }
+.insight-icon {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.i-cyan   { background: var(--cyan-lo);   border: 1px solid rgba(0,200,232,0.2); }
+.i-gold   { background: var(--gold-lo);   border: 1px solid rgba(212,168,67,0.2); }
+.i-red    { background: var(--red-lo);    border: 1px solid rgba(232,80,80,0.2); }
+.i-green  { background: var(--green-lo);  border: 1px solid rgba(64,200,128,0.2); }
+.i-purple { background: var(--purple-lo); border: 1px solid rgba(160,112,240,0.2); }
+.insight-text h4 { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.insight-text p  { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.insight-text em { color: var(--text); font-style: normal; }
+
+/* ─── CAVEAT ─── */
+.caveat-bar {
+  background: rgba(212,168,67,0.06);
+  border: 1px solid rgba(212,168,67,0.2);
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+.caveat-bar .icon { color: var(--gold); flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+
+@media (max-width: 900px) {
+  .site-header, .nav-tabs, .page { padding-left: 20px; padding-right: 20px; }
+  .compare-grid, .chart-grid, .chart-grid.three, .comorbid-grid, .insight-grid { grid-template-columns: 1fr; }
+  .chart-card.span2 { grid-column: span 1; }
+  .insight-box.full { grid-column: span 1; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-left">
+    <div class="site-eyebrow">Phyathai 1 Hospital · MM Conference</div>
+    <div class="site-title">Mortality Comparative Analysis</div>
+    <div class="site-subtitle">February 2026 — Three-way comparison</div>
+  </div>
+  <div class="header-badges">
+    <span class="hbadge hbadge-focus">Feb 2026 Focus</span>
+    <span class="hbadge hbadge-warn">⚠ Small Sample — Interpret with caution</span>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <div class="nav-tab active" onclick="showPage('overview')">Overview</div>
+  <div class="nav-tab" onclick="showPage('vs-jan26')">vs Jan 2026</div>
+  <div class="nav-tab" onclick="showPage('vs-2025')">vs Full Year 2025</div>
+  <div class="nav-tab" onclick="showPage('vs-feb25')">vs Feb 2025 (YoY)</div>
+  <div class="nav-tab" onclick="showPage('trend')">Monthly Trend</div>
+  <div class="nav-tab" onclick="showPage('cases')">Case Records</div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     PAGE: OVERVIEW
+══════════════════════════════════════════ -->
+<div class="page active" id="page-overview">
+
+  <div class="caveat-bar">
+    <span class="icon">⚠</span>
+    <span><strong style="color:var(--gold)">Statistical caution:</strong> Feb 2026 contains only 3 cases and Jan 2026 contains 1. Percentages and averages are highly sensitive to individual cases. The TTP case alone accounts for 70% of Feb 2026's total cost. Treat all 2026 figures as descriptive, not inferential. Comorbidity &amp; complication data is only available for 2026 — no comparison possible with 2025 on those dimensions.</span>
+  </div>
+
+  <div class="section-label">February 2026 — Key Metrics</div>
+  <div class="kpi-grid">
+    <div class="kpi-card cyan">
+      <div class="kpi-label">Total Deaths</div>
+      <div class="kpi-value">3</div>
+      <div class="kpi-sub">Below 2025 monthly avg of 5.8</div>
+      <div class="kpi-delta delta-down">↓ vs 5.8 avg</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">Avg Age</div>
+      <div class="kpi-value">82<span style="font-size:20px;color:var(--muted)">yrs</span></div>
+      <div class="kpi-sub">Range 77–85 · All female</div>
+      <div class="kpi-delta delta-up">↑ +6.7 yrs vs 2025 avg</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Avg Length of Stay</div>
+      <div class="kpi-value">19.7<span style="font-size:20px;color:var(--muted)">d</span></div>
+      <div class="kpi-sub">Median 26d · Range 5–28d</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Total Cost</div>
+      <div class="kpi-value sm">฿5.31M</div>
+      <div class="kpi-sub">Avg ฿1.77M / case · Max ฿3.69M</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Respiratory Failure</div>
+      <div class="kpi-value">100<span style="font-size:20px;color:var(--muted)">%</span></div>
+      <div class="kpi-sub">3 of 3 cases</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">AKI</div>
+      <div class="kpi-value">100<span style="font-size:20px;color:var(--muted)">%</span></div>
+      <div class="kpi-sub">3 of 3 cases — notable clustering</div>
+    </div>
+  </div>
+
+  <div class="section-label">Period Snapshot Comparison</div>
+  <div class="compare-grid">
+    <div class="compare-card highlight">
+      <div class="compare-period"><span class="dot dot-cyan"></span>February 2026 — Focus</div>
+      <div class="compare-n">3</div>
+      <div class="compare-n-label">deaths</div>
+      <div class="compare-row"><span class="compare-key">Avg age</span><span class="compare-val">82.0 yrs</span></div>
+      <div class="compare-row"><span class="compare-key">Gender</span><span class="compare-val">3F / 0M</span></div>
+      <div class="compare-row"><span class="compare-key">Top depts</span><span class="compare-val">Pulmonary, Gen Surg</span></div>
+      <div class="compare-row"><span class="compare-key">Avg LOS</span><span class="compare-val">19.7 days</span></div>
+      <div class="compare-row"><span class="compare-key">Avg cost</span><span class="compare-val">฿1,770,635</span></div>
+      <div class="compare-row"><span class="compare-key">Resp failure</span><span class="compare-val" style="color:var(--red)">100%</span></div>
+      <div class="compare-row"><span class="compare-key">AKI</span><span class="compare-val" style="color:var(--red)">100%</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-period"><span class="dot dot-gold"></span>Full Year 2025</div>
+      <div class="compare-n">69</div>
+      <div class="compare-n-label">deaths · 5.75 / month avg</div>
+      <div class="compare-row"><span class="compare-key">Avg age</span><span class="compare-val">75.3 yrs</span></div>
+      <div class="compare-row"><span class="compare-key">Gender</span><span class="compare-val">36F / 33M</span></div>
+      <div class="compare-row"><span class="compare-key">Top dept</span><span class="compare-val">Cardiovascular (23%)</span></div>
+      <div class="compare-row"><span class="compare-key">Avg LOS</span><span class="compare-val" style="color:var(--muted)">No data</span></div>
+      <div class="compare-row"><span class="compare-key">Avg cost</span><span class="compare-val" style="color:var(--muted)">No data</span></div>
+      <div class="compare-row"><span class="compare-key">Comorbid data</span><span class="compare-val" style="color:var(--muted)">Not recorded</span></div>
+      <div class="compare-row"><span class="compare-key">Complic data</span><span class="compare-val" style="color:var(--muted)">Not recorded</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-period"><span class="dot dot-purple"></span>February 2025 — YoY</div>
+      <div class="compare-n">3</div>
+      <div class="compare-n-label">deaths — identical count</div>
+      <div class="compare-row"><span class="compare-key">Avg age</span><span class="compare-val">71.3 yrs</span></div>
+      <div class="compare-row"><span class="compare-key">Gender</span><span class="compare-val">2F / 1M</span></div>
+      <div class="compare-row"><span class="compare-key">Top depts</span><span class="compare-val">EMS (67%), Pulmonary</span></div>
+      <div class="compare-row"><span class="compare-key">Avg LOS</span><span class="compare-val" style="color:var(--muted)">No data</span></div>
+      <div class="compare-row"><span class="compare-key">Avg cost</span><span class="compare-val" style="color:var(--muted)">No data</span></div>
+      <div class="compare-row"><span class="compare-key">Top dx</span><span class="compare-val">Sepsis, Cardiac arrest, AMI</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Top Diagnoses — Feb 2026</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Feb 2026 Diagnoses</div>
+      <div class="chart-sub">3 cases · 1 each</div>
+      <div class="diag-list" id="diagFeb26"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Feb 2025 Diagnoses (YoY)</div>
+      <div class="chart-sub">3 cases · acute presentations</div>
+      <div class="diag-list" id="diagFeb25"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Complications — February 2026</div>
+  <div class="chart-card" style="margin-bottom:32px">
+    <div class="chart-title">Comorbidities &amp; Complications</div>
+    <div class="chart-sub">Feb 2026 only — 2025 data not recorded</div>
+    <div class="comorbid-grid" style="margin-top:16px">
+      <div>
+        <div class="comorbid-section-title">Comorbidities</div>
+        <div id="comorbidBars26"></div>
+      </div>
+      <div>
+        <div class="comorbid-section-title">Complications</div>
+        <div id="complicBars26"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Key Insights</div>
+  <div class="insight-grid">
+    <div class="insight-box">
+      <div class="insight-icon i-cyan">📉</div>
+      <div class="insight-text">
+        <h4>Death Count Below Average</h4>
+        <p>February 2026's <em>3 deaths</em> is below the 2025 monthly average of <em>5.75/month</em>. On volume alone, February was not an elevated month.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-red">⚡</div>
+      <div class="insight-text">
+        <h4>Dramatically Higher Case Complexity</h4>
+        <p>Average LOS of <em>19.7 days</em> and avg cost of <em>฿1.77M/case</em> signals far more resource-intensive admissions than typical. The TTP case alone cost <em>฿3.69M</em>.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-gold">🔄</div>
+      <div class="insight-text">
+        <h4>Diagnosis Pattern Shift</h4>
+        <p>Feb 2025: acute emergencies (sepsis, cardiac arrest, AMI). Feb 2026: complex subacute diseases (empyema, TTP, CA small bowel). <em>No overlap</em> in diagnosis profile year-on-year.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-purple">🏥</div>
+      <div class="insight-text">
+        <h4>Departmental Shift from Cardiovascular</h4>
+        <p>2025 was dominated by Cardiovascular Center (23%). Feb 2026 has <em>zero cardiovascular deaths</em>. Pulmonary (67%) now leads — though monthly fluctuation with n=3 is expected.</p>
+      </div>
+    </div>
+    <div class="insight-box full">
+      <div class="insight-icon i-red">⚠</div>
+      <div class="insight-text">
+        <h4>100% Respiratory Failure + AKI — Noteworthy Clustering</h4>
+        <p>All 3 February 2026 deaths developed both <em>respiratory failure</em> and <em>acute kidney injury</em>. While the sample is small, this pattern of multi-organ involvement is consistent across all three distinct diagnoses (empyema, TTP, malignancy), suggesting these were late-presenting or rapidly deteriorating admissions regardless of the underlying cause.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: vs JAN 2026
+══════════════════════════════════════════ -->
+<div class="page" id="page-vs-jan26">
+  <div class="caveat-bar">
+    <span class="icon">⚠</span>
+    <span>January 2026 has only <strong style="color:var(--gold)">1 case</strong>. No statistical comparison is meaningful — figures shown are purely descriptive.</span>
+  </div>
+
+  <div class="section-label">February 2026 vs January 2026</div>
+  <div class="kpi-grid">
+    <div class="kpi-card cyan">
+      <div class="kpi-label">Deaths</div>
+      <div class="kpi-value">3 <span style="font-size:20px;color:var(--muted)">vs 1</span></div>
+      <div class="kpi-sub">3× higher month-over-month</div>
+      <div class="kpi-delta delta-up">↑ +2 deaths</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">Avg Age</div>
+      <div class="kpi-value">82 <span style="font-size:20px;color:var(--muted)">vs 90</span></div>
+      <div class="kpi-sub">Feb younger · both elderly female</div>
+      <div class="kpi-delta delta-down">↓ −8 yrs</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Avg LOS</div>
+      <div class="kpi-value sm">19.7d <span style="font-size:14px;color:var(--muted)">vs 1d</span></div>
+      <div class="kpi-sub">Jan: rapid death — Feb: prolonged</div>
+      <div class="kpi-delta delta-up">↑ +18.7 days</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Avg Cost / Case</div>
+      <div class="kpi-value xs">฿1.77M <span style="font-size:12px;color:var(--muted)">vs ฿35,872</span></div>
+      <div class="kpi-sub">Feb cases cost ~49× more per case</div>
+      <div class="kpi-delta delta-up">↑ +4,838%</div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">LOS Comparison</div>
+      <div class="chart-sub">Days in hospital per case</div>
+      <div class="chart-wrap"><canvas id="chartLOSJan"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Cost per Case (THB)</div>
+      <div class="chart-sub">Individual case costs</div>
+      <div class="chart-wrap"><canvas id="chartCostJan"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Case Profile Comparison</div>
+  <div class="chart-card" style="margin-bottom:32px">
+    <div class="chart-title">Diagnosis &amp; Department</div>
+    <div class="chart-sub">All cases listed</div>
+    <div class="case-table-wrap" style="margin-top:12px">
+      <table>
+        <thead><tr><th>Month</th><th>Date</th><th>Dept</th><th>Age</th><th>Gender</th><th>Diagnosis</th><th>LOS</th><th>Cost (THB)</th><th>Complications</th></tr></thead>
+        <tbody id="tableJan26"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-label">Comorbidities &amp; Complications</div>
+  <div class="chart-card" style="margin-bottom:32px">
+    <div class="comorbid-grid">
+      <div>
+        <div class="comorbid-section-title">Comorbidities — Feb 2026</div>
+        <div id="comorbidJanFeb"></div>
+      </div>
+      <div>
+        <div class="comorbid-section-title">Complications — Feb 2026</div>
+        <div id="complicJanFeb"></div>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <div class="comorbid-section-title">January 2026 (1 case)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <span class="tag tag-yes">HT</span>
+        <span class="tag tag-yes">DLP</span>
+        <span class="tag tag-yes">Cancer</span>
+        <span style="font-size:12px;color:var(--muted);margin-left:4px">Complication: Respiratory failure only</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: vs FULL 2025
+══════════════════════════════════════════ -->
+<div class="page" id="page-vs-2025">
+
+  <div class="section-label">February 2026 vs Full Year 2025</div>
+  <div class="kpi-grid">
+    <div class="kpi-card cyan">
+      <div class="kpi-label">Feb 2026 vs Monthly Avg</div>
+      <div class="kpi-value">3 <span style="font-size:20px;color:var(--muted)">vs 5.8</span></div>
+      <div class="kpi-sub">Feb 2026 is 48% below the 2025 monthly average</div>
+      <div class="kpi-delta delta-down">↓ Below average</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">Avg Age</div>
+      <div class="kpi-value">82 <span style="font-size:20px;color:var(--muted)">vs 75.3</span></div>
+      <div class="kpi-sub">Feb 2026 patients 6.7 yrs older on avg</div>
+      <div class="kpi-delta delta-up">↑ +6.7 yrs</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Top Dept (2025)</div>
+      <div class="kpi-value xs">Cardiovascular</div>
+      <div class="kpi-sub">23% of 2025 deaths. Zero in Feb 2026.</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Top Dept (Feb 2026)</div>
+      <div class="kpi-value xs">Pulmonary</div>
+      <div class="kpi-sub">67% of Feb 2026. 17% in full 2025.</div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Deaths by Department</div>
+      <div class="chart-sub">Full 2025 distribution</div>
+      <div class="chart-wrap"><canvas id="chartDept2025"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top 8 Diagnoses — Full 2025</div>
+      <div class="chart-sub">n=69 total deaths</div>
+      <div class="diag-list" id="diag2025Full" style="margin-top:4px"></div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Age Distribution — Full 2025</div>
+      <div class="chart-sub">by decade (n=69)</div>
+      <div class="chart-wrap"><canvas id="chartAge2025"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Gender Split</div>
+      <div class="chart-sub">2025 vs Feb 2026</div>
+      <div class="chart-wrap"><canvas id="chartGender2025"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">What's Different in Feb 2026 vs 2025 Norm</div>
+  <div class="insight-grid">
+    <div class="insight-box">
+      <div class="insight-icon i-gold">🔄</div>
+      <div class="insight-text">
+        <h4>Complete Diagnosis Shift</h4>
+        <p>2025's top diagnoses (pneumonia, sepsis, AMI, cardiac arrest, ICH) have <em>zero overlap</em> with Feb 2026 (empyema, TTP, CA small bowel). Feb 2026 cases are rarer, more complex entities.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-red">🏥</div>
+      <div class="insight-text">
+        <h4>No EMS / Cardiovascular Deaths</h4>
+        <p>In 2025, <em>30%</em> of deaths came from Cardiovascular Center + EMS combined (out-of-hospital and acute cardiac events). Feb 2026 has none — all were admitted, prolonged care cases.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-cyan">📊</div>
+      <div class="insight-text">
+        <h4>LOS &amp; Cost — New Tracking</h4>
+        <p>2025 did not record LOS or cost. Feb 2026 establishes the <em>first baseline</em>: avg 19.7d and ฿1.77M/case. These figures will only be meaningful once more months accumulate.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-purple">👥</div>
+      <div class="insight-text">
+        <h4>Gender Balance</h4>
+        <p>2025 was near-balanced (52F/48M). Feb 2026 is <em>100% female</em>. With n=3, this is almost certainly random — not a meaningful signal.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="caveat-bar">
+    <span class="icon">ℹ</span>
+    <span><strong style="color:var(--gold)">Data completeness note:</strong> The 2025 sheet has no entries for comorbidities, complications, LOS, or cost. These fields were either not collected or not entered. This limits year-on-year comparison to death count, age, gender, department, and diagnosis only.</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: vs FEB 2025
+══════════════════════════════════════════ -->
+<div class="page" id="page-vs-feb25">
+
+  <div class="section-label">February 2026 vs February 2025 — Year-on-Year</div>
+  <div class="kpi-grid">
+    <div class="kpi-card cyan">
+      <div class="kpi-label">Death Count</div>
+      <div class="kpi-value">3 <span style="font-size:20px;color:var(--muted)">vs 3</span></div>
+      <div class="kpi-sub">Identical count year-on-year</div>
+      <div class="kpi-delta delta-same">→ No change</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">Avg Age</div>
+      <div class="kpi-value">82 <span style="font-size:20px;color:var(--muted)">vs 71.3</span></div>
+      <div class="kpi-sub">2026 patients 10.7 yrs older on avg</div>
+      <div class="kpi-delta delta-up">↑ +10.7 yrs</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">EMS Deaths</div>
+      <div class="kpi-value">0 <span style="font-size:20px;color:var(--muted)">vs 2</span></div>
+      <div class="kpi-sub">Feb 2025 had 2 EMS/ER deaths; 2026 had none</div>
+      <div class="kpi-delta delta-down">↓ −2</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Diagnosis Overlap</div>
+      <div class="kpi-value xs">Zero</div>
+      <div class="kpi-sub">Completely different diagnoses year-on-year</div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Diagnosis Comparison — Feb YoY</div>
+      <div class="chart-sub">Feb 2025 vs Feb 2026</div>
+      <div class="chart-wrap tall"><canvas id="chartDiagYoY"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Age Distribution — Feb YoY</div>
+      <div class="chart-sub">Individual ages per case</div>
+      <div class="chart-wrap tall"><canvas id="chartAgeYoY"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Side-by-Side Case Comparison</div>
+  <div class="chart-card" style="margin-bottom:32px">
+    <div class="case-table-wrap">
+      <table>
+        <thead><tr><th>Year</th><th>Date</th><th>Dept</th><th>Age</th><th>Gender</th><th>Diagnosis</th><th>LOS</th><th>Cost</th></tr></thead>
+        <tbody id="tableYoY"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-label">Key YoY Observations</div>
+  <div class="insight-grid">
+    <div class="insight-box">
+      <div class="insight-icon i-cyan">🔢</div>
+      <div class="insight-text">
+        <h4>Volume Unchanged</h4>
+        <p>Both Februaries had exactly <em>3 deaths</em>. On count alone, there is no year-on-year deterioration or improvement. However, with n=3, this numerical equality is likely coincidence.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-red">🚑</div>
+      <div class="insight-text">
+        <h4>Emergency vs In-Hospital Shift</h4>
+        <p>Feb 2025: 2 out of 3 deaths were in the ER (cardiac arrest, AMI) — <em>acute out-of-hospital presentations</em>. Feb 2026: all 3 were admitted inpatients with prolonged stays — <em>complex in-hospital deterioration</em>.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-gold">📅</div>
+      <div class="insight-text">
+        <h4>Older Patient Profile</h4>
+        <p>Average age rose from <em>71.3 to 82.0 years</em> (+10.7 yrs). This may reflect a genuine trend toward older decedents, or simply the random composition of 3-case samples in each year.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-purple">💊</div>
+      <div class="insight-text">
+        <h4>Disease Complexity Increased</h4>
+        <p>Feb 2025 diagnoses (sepsis, cardiac arrest, AMI) are common final-pathway conditions. Feb 2026 (empyema, TTP, CA small bowel) are <em>rarer, more complex entities</em> requiring specialist-intensive management.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: MONTHLY TREND
+══════════════════════════════════════════ -->
+<div class="page" id="page-trend">
+  <div class="section-label">Monthly Death Count — 2025 Full Year</div>
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title">2025 Monthly Mortality Trend</div>
+    <div class="chart-sub">All 12 months · n=69 total · Feb 2026 shown for reference</div>
+    <div class="chart-wrap tall"><canvas id="chartTrend"></canvas></div>
+  </div>
+
+  <div class="section-label">2025 Monthly Detail Table</div>
+  <div class="chart-card" style="margin-bottom:32px">
+    <div class="case-table-wrap">
+      <table class="trend-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Deaths</th>
+            <th>vs Avg (5.75)</th>
+            <th>Cumulative</th>
+          </tr>
+        </thead>
+        <tbody id="trendTableBody"></tbody>
+        <tfoot>
+          <tr style="border-top:1px solid var(--border2)">
+            <td style="color:var(--text);font-family:'DM Mono',monospace;padding:10px 12px;font-weight:500">2026 Jan</td>
+            <td style="text-align:center;font-family:'DM Mono',monospace;padding:10px 12px;color:var(--cyan)">1</td>
+            <td style="text-align:center;font-family:'DM Mono',monospace;padding:10px 12px;color:var(--green)">−4.75</td>
+            <td style="text-align:center;color:var(--muted);font-family:'DM Mono',monospace;padding:10px 12px">—</td>
+          </tr>
+          <tr class="highlight-row">
+            <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-weight:500">2026 Feb ★</td>
+            <td style="text-align:center;font-family:'DM Mono',monospace;padding:10px 12px">3</td>
+            <td style="text-align:center;font-family:'DM Mono',monospace;padding:10px 12px;color:var(--green)">−2.75</td>
+            <td style="text-align:center;color:var(--muted);font-family:'DM Mono',monospace;padding:10px 12px">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="insight-grid" style="margin-bottom:32px">
+    <div class="insight-box">
+      <div class="insight-icon i-red">📈</div>
+      <div class="insight-text">
+        <h4>Peak Months in 2025</h4>
+        <p>November (10) and June (9) were the highest-mortality months in 2025. October (8) was also elevated. These warrant further investigation for seasonal or operational factors.</p>
+      </div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-icon i-green">📉</div>
+      <div class="insight-text">
+        <h4>Low-Mortality Months</h4>
+        <p>February, May, and September 2025 all had just 3 deaths — the lowest count. Feb 2026 also has 3, consistent with this historical low. February may simply be a structurally lower-volume month.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: CASE RECORDS
+══════════════════════════════════════════ -->
+<div class="page" id="page-cases">
+  <div class="section-label">All 2026 Cases (n=4)</div>
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="case-table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>HN</th><th>Dept</th><th>Ward</th><th>Gender</th><th>Age</th><th>Principal Diagnosis</th><th>LOS</th><th>Cost (THB)</th><th>Comorbidities</th><th>Complications</th></tr></thead>
+        <tbody id="tableAll2026"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-label">All 2025 Cases (n=69)</div>
+  <div class="chart-card">
+    <div class="case-table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>HN</th><th>Dept</th><th>Ward</th><th>Gender</th><th>Age</th><th>Principal Diagnosis</th></tr></thead>
+        <tbody id="tableAll2025"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const DATA = {
+  feb26: {"label":"February 2026","n":3,"avg_age":82.0,"min_age":77,"max_age":85,"gender":{"Female":3},"depts":{"Pulmonary":2,"General Surgery":1},"diags":{"Empyema thoracis":1,"Thrombotic thrombocytopenic purpura":1,"CA Small bowel":1},"comorbid":{"DM":0,"HT":1,"DLP":2,"Heart disease":1,"Kidney disease":0,"Lung disease":0,"Cancer":1,"Others":1},"complic":{"Shock at presentation":0,"Respiratory failure":3,"Heart failure":1,"AKI":3},"has_comorbid":true,"has_complic":true,"avg_los":19.7,"med_los":26.0,"min_los":5.0,"max_los":28.0,"total_cost":5311903.92,"avg_cost":1770635,"max_cost":3693323.88,"cases":[{"date":"2026-02-01","hn":"102186/69","dept":"Pulmonary","ward":"ASU","gender":"Female","age":85,"diag":"Empyema thoracis","los":5.0,"cost":254711.37,"comorbid":["Heart disease"],"complic":["Respiratory failure","AKI"]},{"date":"2026-02-10","hn":"120168/41","dept":"Pulmonary","ward":"ASU","gender":"Female","age":84,"diag":"Thrombotic thrombocytopenic purpura","los":28.0,"cost":3693323.88,"comorbid":["DLP"],"complic":["Respiratory failure","Heart failure","AKI"]},{"date":"2026-02-25","hn":"111421/57","dept":"General Surgery","ward":"W042","gender":"Female","age":77,"diag":"CA Small bowel","los":26.0,"cost":1363868.67,"comorbid":["HT","DLP","Cancer","Others"],"complic":["Respiratory failure","AKI"]}]},
+  jan26: {"label":"January 2026","n":1,"avg_age":90.0,"min_age":90,"max_age":90,"gender":{"Female":1},"depts":{"Med":1},"diags":{"Pneumonia":1},"comorbid":{"DM":0,"HT":1,"DLP":1,"Heart disease":0,"Kidney disease":0,"Lung disease":0,"Cancer":1,"Others":0},"complic":{"Shock at presentation":0,"Respiratory failure":1,"Heart failure":0,"AKI":0},"has_comorbid":true,"has_complic":true,"avg_los":1.0,"med_los":1.0,"min_los":1.0,"max_los":1.0,"total_cost":35872.0,"avg_cost":35872,"max_cost":35872.0,"cases":[{"date":"2026-01-28","hn":"155071/32","dept":"Med","ward":"W6","gender":"Female","age":90,"diag":"Pneumonia","los":1.0,"cost":35872.0,"comorbid":["HT","DLP","Cancer"],"complic":["Respiratory failure"]}]},
+  whole25: {"label":"Full Year 2025","n":69,"avg_age":75.3,"min_age":26,"max_age":97,"gender":{"Female":36,"Male":33},"depts":{"Cardiovascular Center":16,"Pulmonary":12,"Neuro Medical & Stroke":11,"General Medicine":8,"Gastro - Intestinal Medicine":6,"Emergency Medical Service":5,"Oncology":5,"General Surgery":2,"Urology Clinic":1,"Intregrated Spine Center":1,"Neuro Surgery":1,"Rheumatology":1},"diags":{"Pneumonia":10,"Sepsis":8,"Acute myocardial infarction":6,"Cardiac arrest, unspecified":6,"Intracerebral hemorrhage":6,"Heart failure":4,"HCC":4,"ESKD":3},"has_comorbid":false,"has_complic":false,"avg_los":null,"med_los":null,"total_cost":null,"avg_cost":null,"cases":[{"date":"2025-01-04","hn":"138972/27","dept":"Pulmonary","ward":"CCU","gender":"Female","age":97,"diag":"Pneumonia"},{"date":"2025-01-08","hn":"100765/68","dept":"Cardiovascular Center","ward":"CCU","gender":"Male","age":41,"diag":"Acute myocardial infarction"},{"date":"2025-01-11","hn":"133983/67","dept":"Pulmonary","ward":"W042","gender":"Male","age":82,"diag":"Pneumonia"},{"date":"2025-01-27","hn":"137666/28","dept":"Pulmonary","ward":"W042","gender":"Female","age":95,"diag":"Pneumonia"},{"date":"2025-01-31","hn":"133436/66","dept":"Pulmonary","ward":"CCU","gender":"Male","age":66,"diag":"CA Lung"},{"date":"2025-01-16","hn":"101780/68","dept":"Emergency Medical Service","ward":"ER","gender":"Male","age":26,"diag":"Trauma"},{"date":"2025-02-22","hn":"140577/66","dept":"Pulmonary","ward":"ASU","gender":"Female","age":95,"diag":"Sepsis"},{"date":"2025-02-05","hn":"104037/68","dept":"Emergency Medical Service","ward":"ER","gender":"Male","age":56,"diag":"Cardiac arrest, unspecified"},{"date":"2025-02-07","hn":"104198/68","dept":"Emergency Medical Service","ward":"ER","gender":"Female","age":63,"diag":"Acute myocardial infarction"},{"date":"2025-03-04","hn":"112899/60","dept":"Cardiovascular Center","ward":"W8","gender":"Female","age":95,"diag":"Hyperglycemia"},{"date":"2025-03-09","hn":"107462/68","dept":"Neuro Medical & Stroke","ward":"ASU","gender":"Male","age":42,"diag":"Intracerebral hemorrhage"},{"date":"2025-03-21","hn":"145634/36","dept":"General Medicine","ward":"CCU","gender":"Female","age":77,"diag":"Sepsis"},{"date":"2025-03-30","hn":"108665/68","dept":"Cardiovascular Center","ward":"CCU","gender":"Male","age":91,"diag":"Heart failure"},{"date":"2025-03-01","hn":"107003/68","dept":"Emergency Medical Service","ward":"ER","gender":"Female","age":76,"diag":"Cardiac arrest, unspecified"},{"date":"2025-04-06","hn":"116229/39","dept":"Neuro Medical & Stroke","ward":"W6","gender":"Male","age":82,"diag":"Sepsis"},{"date":"2025-04-07","hn":"105234/68","dept":"Gastro - Intestinal Medicine","ward":"CCU","gender":"Male","age":48,"diag":"CA rectosigmoid"},{"date":"2025-04-29","hn":"110361/37","dept":"Neuro Medical & Stroke","ward":"W6","gender":"Female","age":95,"diag":"GI bleeding"},{"date":"2025-04-30","hn":"143223/67","dept":"Oncology","ward":"CCU","gender":"Female","age":72,"diag":"Pneumonia"},{"date":"2025-05-07","hn":"112898/68","dept":"Gastro - Intestinal Medicine","ward":"CCU","gender":"Male","age":60,"diag":"Acute on chronic liver failure"},{"date":"2025-05-27","hn":"135664/67","dept":"Oncology","ward":"W042","gender":"Female","age":74,"diag":"Pneumonia"},{"date":"2025-05-10","hn":"113411/68","dept":"Emergency Medical Service","ward":"ER","gender":"Male","age":43,"diag":"Acute myocardial infarction"},{"date":"2025-06-07","hn":"115638/54","dept":"General Medicine","ward":"CCU","gender":"Male","age":68,"diag":"Sepsis"},{"date":"2025-06-11","hn":"115207/54","dept":"Pulmonary","ward":"CCU","gender":"Female","age":91,"diag":"Bradycardia"},{"date":"2025-06-12","hn":"143771/66","dept":"Cardiovascular Center","ward":"CCU","gender":"Male","age":93,"diag":"Sepsis"},{"date":"2025-06-16","hn":"119136/26","dept":"Urology Clinic","ward":"W8","gender":"Female","age":89,"diag":"Sepsis"},{"date":"2025-06-17","hn":"131980/36","dept":"General Medicine","ward":"CCU","gender":"Male","age":57,"diag":"GI bleeding"},{"date":"2025-06-21","hn":"109828/46","dept":"Intregrated Spine Center","ward":"W6","gender":"Female","age":77,"diag":"Compression fracture"},{"date":"2025-06-21","hn":"109443/41","dept":"General Medicine","ward":"CCU","gender":"Female","age":86,"diag":"Pneumonia"},{"date":"2025-06-26","hn":"150884/55","dept":"Oncology","ward":"W042","gender":"Male","age":47,"diag":"CA pancreas"},{"date":"2025-06-27","hn":"150311/27","dept":"General Medicine","ward":"CCU","gender":"Female","age":94,"diag":"Sepsis"},{"date":"2025-07-16","hn":"120686/68","dept":"Cardiovascular Center","ward":"ER","gender":"Female","age":55,"diag":"Cardiac arrest, unspecified"},{"date":"2025-07-17","hn":"120625/68","dept":"Cardiovascular Center","ward":"CCU","gender":"Male","age":73,"diag":"Acute myocardial infarction"},{"date":"2025-07-23","hn":"125584/35","dept":"Cardiovascular Center","ward":"W8","gender":"Female","age":97,"diag":"ESKD"},{"date":"2025-07-24","hn":"124537/39","dept":"Pulmonary","ward":"CCU","gender":"Female","age":65,"diag":"Pneumonia"},{"date":"2025-07-26","hn":"120499/48","dept":"General Medicine","ward":"W8","gender":"Female","age":80,"diag":"ESKD"},{"date":"2025-07-28","hn":"114023/51","dept":"General Medicine","ward":"CCU","gender":"Male","age":80,"diag":"Pneumonia"},{"date":"2025-08-08","hn":"122624/68","dept":"Cardiovascular Center","ward":"CCU","gender":"Male","age":61,"diag":"Cardiac arrest, unspecified"},{"date":"2025-08-10","hn":"161208/33","dept":"Neuro Medical & Stroke","ward":"CCU","gender":"Female","age":67,"diag":"Subdural hematoma"},{"date":"2025-08-14","hn":"1103940/59","dept":"General Surgery","ward":"ASU","gender":"Male","age":53,"diag":"Gut obstruction"},{"date":"2025-08-24","hn":"123868/68","dept":"Neuro Medical & Stroke","ward":"ASU","gender":"Female","age":70,"diag":"Intracerebral hemorrhage"},{"date":"2025-08-28","hn":"162921/29","dept":"Cardiovascular Center","ward":"CCU","gender":"Female","age":90,"diag":"Acute myocardial infarction"},{"date":"2025-08-29","hn":"139073/54","dept":"Neuro Medical & Stroke","ward":"ASU","gender":"Male","age":78,"diag":"Intracerebral hemorrhage"},{"date":"2025-09-06","hn":"163777/27","dept":"Gastro - Intestinal Medicine","ward":"W042","gender":"Female","age":89,"diag":"HCC"},{"date":"2025-09-18","hn":"125727/68","dept":"Neuro Surgery","ward":"ASU","gender":"Male","age":73,"diag":"Subdural hematoma"},{"date":"2025-09-25","hn":"123821/23","dept":"Pulmonary","ward":"W6","gender":"Male","age":85,"diag":"Chronic lymphocytic leukemia"},{"date":"2025-10-02","hn":"116491/68","dept":"Oncology","ward":"W042","gender":"Female","age":53,"diag":"HCC"},{"date":"2025-10-03","hn":"132862/50","dept":"Neuro Medical & Stroke","ward":"ASU","gender":"Female","age":93,"diag":"Intracerebral hemorrhage"},{"date":"2025-10-05","hn":"142746/24","dept":"Cardiovascular Center","ward":"CCU","gender":"Female","age":89,"diag":"Cardiac arrest, unspecified"},{"date":"2025-10-06","hn":"130919/54","dept":"Gastro - Intestinal Medicine","ward":"ASU","gender":"Male","age":79,"diag":"HCC"},{"date":"2025-10-12","hn":"130528/68","dept":"Cardiovascular Center","ward":"CCU","gender":"Female","age":88,"diag":"Heart failure"},{"date":"2025-10-21","hn":"132295/68","dept":"Cardiovascular Center","ward":"CCU","gender":"Male","age":64,"diag":"Cardiac arrest, unspecified"},{"date":"2025-10-25","hn":"123601/64","dept":"Pulmonary","ward":"W8","gender":"Female","age":96,"diag":"CA lung"},{"date":"2025-10-30","hn":"122452/47","dept":"General Surgery","ward":"W6","gender":"Male","age":89,"diag":"ESKD"},{"date":"2025-11-04","hn":"112675/55","dept":"Oncology","ward":"CCU","gender":"Female","age":68,"diag":"HCC"},{"date":"2025-11-10","hn":"100507/30","dept":"Cardiovascular Center","ward":"CCU","gender":"Female","age":93,"diag":"Pneumonia"},{"date":"2025-11-11","hn":"131544/34","dept":"Neuro Medical & Stroke","ward":"W6","gender":"Female","age":96,"diag":"Intracerebral hemorrhage"},{"date":"2025-11-11","hn":"126465/21","dept":"Neuro Medical & Stroke","ward":"ASU","gender":"Male","age":91,"diag":"Intracerebral hemorrhage"},{"date":"2025-11-12","hn":"132753/37","dept":"Gastro - Intestinal Medicine","ward":"W042","gender":"Female","age":74,"diag":"CA pancreas"},{"date":"2025-11-23","hn":"108404/36","dept":"General Medicine","ward":"ASU","gender":"Female","age":88,"diag":"CRBSI"},{"date":"2025-11-23","hn":"135959/68","dept":"Rheumatology","ward":"CCU","gender":"Female","age":57,"diag":"Thrombotic Thrombocytopenic Purpura"},{"date":"2025-11-27","hn":"101677/28","dept":"Pulmonary","ward":"CCU","gender":"Male","age":87,"diag":"Pneumonia"},{"date":"2025-11-27","hn":"120773/41","dept":"Cardiovascular Center","ward":"CCU","gender":"Male","age":87,"diag":"Acute myocardial infarction"},{"date":"2025-11-27","hn":"136100/68","dept":"Gastro - Intestinal Medicine","ward":"ASU","gender":"Male","age":75,"diag":"Sepsis"},{"date":"2025-12-09","hn":"1121837/59","dept":"Pulmonary","ward":"W042","gender":"Male","age":68,"diag":"CA Tonsil"},{"date":"2025-12-21","hn":"138891/68","dept":"Pulmonary","ward":"CCU","gender":"Male","age":57,"diag":"Pulmonary tuberculosis"},{"date":"2025-12-22","hn":"108203/67","dept":"Neuro Medical & Stroke","ward":"ASU","gender":"Female","age":66,"diag":"Brain abscess"},{"date":"2025-12-22","hn":"151799/33","dept":"Cardiovascular Center","ward":"CCU","gender":"Female","age":87,"diag":"Heart failure"},{"date":"2025-12-22","hn":"153727/61","dept":"Cardiovascular Center","ward":"CCU","gender":"Male","age":82,"diag":"Heart failure"},{"date":"2025-12-24","hn":"138808/68","dept":"Neuro Medical & Stroke","ward":"W6","gender":"Male","age":72,"diag":"Syncope"}]},
+  feb25: {"label":"February 2025","n":3,"avg_age":71.3,"min_age":56,"max_age":95,"gender":{"Female":2,"Male":1},"depts":{"Emergency Medical Service":2,"Pulmonary":1},"diags":{"Sepsis":1,"Cardiac arrest, unspecified":1,"Acute myocardial infarction":1},"has_comorbid":false,"has_complic":false,"avg_los":null,"total_cost":null,"cases":[{"date":"2025-02-22","hn":"140577/66","dept":"Pulmonary","ward":"ASU","gender":"Female","age":95,"diag":"Sepsis"},{"date":"2025-02-05","hn":"104037/68","dept":"Emergency Medical Service","ward":"ER","gender":"Male","age":56,"diag":"Cardiac arrest, unspecified"},{"date":"2025-02-07","hn":"104198/68","dept":"Emergency Medical Service","ward":"ER","gender":"Female","age":63,"diag":"Acute myocardial infarction"}]},
+  months25: {1:6,2:3,3:5,4:4,5:3,6:9,7:6,8:6,9:3,10:8,11:10,12:6},
+  avg_monthly_25: 5.8
+};
+
+const MONTH_NAMES = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PALETTE = ['#00c8e8','#d4a843','#e85050','#40c880','#a070f0','#e87040','#5090e8','#e8d040'];
+
+Chart.defaults.color = '#6b7590';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+function fmtTHB(n) {
+  if (!n) return '—';
+  if (n >= 1e6) return '฿' + (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '฿' + (n/1e3).toFixed(1) + 'k';
+  return '฿' + n.toFixed(0);
+}
+function losClass(d) {
+  if (!d || d === 0) return '';
+  if (d <= 3)  return 'los-s';
+  if (d <= 14) return 'los-m';
+  return 'los-l';
+}
+
+// ── NAV ──────────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── DIAG BARS ─────────────────────────────────────────────────────────────────
+function renderDiagBars(containerId, diags, color) {
+  const el = document.getElementById(containerId);
+  const entries = Object.entries(diags);
+  const max = Math.max(...entries.map(e=>e[1]), 1);
+  el.innerHTML = entries.map(([name, cnt]) => `
+    <div class="diag-row">
+      <div class="diag-top">
+        <span class="diag-name">${name}</span>
+        <span class="diag-count">${cnt}</span>
+      </div>
+      <div class="diag-track"><div class="diag-fill" style="width:${cnt/max*100}%;background:${color}"></div></div>
+    </div>`).join('');
+}
+
+// ── COMORBID BARS ─────────────────────────────────────────────────────────────
+function renderBars(containerId, data, labels, color, n) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const counts = labels.map(l => data[l] || 0);
+  const max = Math.max(...counts, 1);
+  el.innerHTML = counts.map((cnt, i) => {
+    const pct = n > 0 ? Math.round(cnt/n*100) : 0;
+    return `<div class="bar-row">
+      <div class="bar-label"><span class="bar-name">${labels[i]}</span><span class="bar-val">${cnt} (${pct}%)</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${cnt/max*100}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── CHART HELPERS ─────────────────────────────────────────────────────────────
+const gridColor = 'rgba(255,255,255,0.05)';
+function baseOpts(extra={}) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: gridColor } },
+      y: { grid: { color: gridColor }, beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
+    },
+    ...extra
+  };
+}
+
+// ── RENDER ALL ────────────────────────────────────────────────────────────────
+function init() {
+  const d = DATA;
+
+  // Overview: diag bars
+  renderDiagBars('diagFeb26', d.feb26.diags, 'var(--cyan)');
+  renderDiagBars('diagFeb25', d.feb25.diags, 'var(--purple)');
+
+  // Overview comorbid
+  renderBars('comorbidBars26', d.feb26.comorbid, Object.keys(d.feb26.comorbid), 'var(--gold)', d.feb26.n);
+  renderBars('complicBars26',  d.feb26.complic,  Object.keys(d.feb26.complic),  'var(--red)',  d.feb26.n);
+
+  // ── vs Jan 2026: LOS chart ──
+  new Chart(document.getElementById('chartLOSJan'), {
+    type: 'bar',
+    data: {
+      labels: ['Jan: Pneumonia','Feb: Empyema','Feb: TTP','Feb: CA Small bowel'],
+      datasets: [{
+        data: [1, 5, 28, 26],
+        backgroundColor: ['rgba(212,168,67,0.65)','rgba(0,200,232,0.65)','rgba(0,200,232,0.65)','rgba(0,200,232,0.65)'],
+        borderRadius: 5, borderSkipped: false
+      }]
+    },
+    options: {
+      ...baseOpts(),
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label: c=>` ${c.parsed.y} days`}} },
+      scales: { x:{grid:{color:gridColor},ticks:{maxRotation:25,font:{size:10}}}, y:{grid:{color:gridColor},beginAtZero:true,ticks:{callback:v=>v+'d'}} }
+    }
+  });
+
+  // vs Jan 2026: Cost chart
+  new Chart(document.getElementById('chartCostJan'), {
+    type: 'bar',
+    data: {
+      labels: ['Jan: Pneumonia','Feb: Empyema','Feb: TTP','Feb: CA Small bowel'],
+      datasets: [{
+        data: [35872, 254711, 3693324, 1363869],
+        backgroundColor: ['rgba(212,168,67,0.65)','rgba(64,200,128,0.65)','rgba(232,80,80,0.75)','rgba(232,80,80,0.65)'],
+        borderRadius: 5, borderSkipped: false
+      }]
+    },
+    options: {
+      ...baseOpts(),
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>` ฿${c.parsed.y.toLocaleString()}`}} },
+      scales: { x:{grid:{color:gridColor},ticks:{maxRotation:25,font:{size:10}}}, y:{grid:{color:gridColor},beginAtZero:true,ticks:{callback:v=>{if(v>=1e6)return'฿'+(v/1e6).toFixed(1)+'M';if(v>=1e3)return'฿'+(v/1e3).toFixed(0)+'k';return'฿'+v;}}} }
+    }
+  });
+
+  // Jan table
+  const tJan = document.getElementById('tableJan26');
+  const allRows = [...d.jan26.cases.map(c=>({...c,month:'Jan 2026'})), ...d.feb26.cases.map(c=>({...c,month:'Feb 2026'}))];
+  tJan.innerHTML = allRows.map(c => `<tr>
+    <td style="color:var(--muted);font-family:'DM Mono',monospace">${c.month}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:11px">${c.date}</td>
+    <td><span class="tag tag-dept">${c.dept}</span></td>
+    <td style="font-family:'DM Mono',monospace">${c.age}</td>
+    <td><span class="tag ${c.gender==='Female'?'tag-f':'tag-m'}">${c.gender}</span></td>
+    <td style="font-size:11px;white-space:normal;max-width:180px">${c.diag}</td>
+    <td>${c.los>0?`<span class="los-pill ${losClass(c.los)}">${c.los}d</span>`:'<span style="color:var(--dim)">—</span>'}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:11px">${c.cost>0?fmtTHB(c.cost):'—'}</td>
+    <td style="white-space:normal;max-width:160px">${(c.complic||[]).map(x=>`<span class="tag tag-yes">${x}</span>`).join('')||'<span style="color:var(--dim)">—</span>'}</td>
+  </tr>`).join('');
+
+  // Jan comorbid/complic
+  renderBars('comorbidJanFeb', d.feb26.comorbid, Object.keys(d.feb26.comorbid), 'var(--gold)', d.feb26.n);
+  renderBars('complicJanFeb',  d.feb26.complic,  Object.keys(d.feb26.complic),  'var(--red)',  d.feb26.n);
+
+  // ── vs 2025: Dept chart ──
+  const deptEntries = Object.entries(d.whole25.depts).sort((a,b)=>b[1]-a[1]);
+  new Chart(document.getElementById('chartDept2025'), {
+    type: 'bar',
+    data: {
+      labels: deptEntries.map(e=>e[0].length>22?e[0].slice(0,20)+'…':e[0]),
+      datasets: [{ data: deptEntries.map(e=>e[1]), backgroundColor: PALETTE, borderRadius: 5, borderSkipped: false }]
+    },
+    options: { ...baseOpts(), plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} deaths`}}} }
+  });
+
+  // vs 2025: Diag bars
+  renderDiagBars('diag2025Full', d.whole25.diags, 'var(--gold)');
+
+  // vs 2025: Age dist
+  const ageBuckets = {'0–9':0,'10–19':0,'20–29':0,'30–39':0,'40–49':0,'50–59':0,'60–69':0,'70–79':0,'80–89':0,'90+':0};
+  d.whole25.cases.forEach(c => {
+    const a = c.age;
+    if(a<10)ageBuckets['0–9']++;else if(a<20)ageBuckets['10–19']++;else if(a<30)ageBuckets['20–29']++;
+    else if(a<40)ageBuckets['30–39']++;else if(a<50)ageBuckets['40–49']++;else if(a<60)ageBuckets['50–59']++;
+    else if(a<70)ageBuckets['60–69']++;else if(a<80)ageBuckets['70–79']++;else if(a<90)ageBuckets['80–89']++;
+    else ageBuckets['90+']++;
+  });
+  new Chart(document.getElementById('chartAge2025'), {
+    type: 'bar',
+    data: { labels: Object.keys(ageBuckets), datasets: [{ data: Object.values(ageBuckets), backgroundColor: 'rgba(0,200,232,0.6)', borderRadius: 5, borderSkipped: false }] },
+    options: baseOpts()
+  });
+
+  // vs 2025: Gender comparison
+  new Chart(document.getElementById('chartGender2025'), {
+    type: 'bar',
+    data: {
+      labels: ['2025 Full Year','Feb 2026'],
+      datasets: [
+        { label: 'Female', data: [36, 3], backgroundColor: 'rgba(64,200,128,0.7)', borderRadius: 5, borderSkipped: false },
+        { label: 'Male',   data: [33, 0], backgroundColor: 'rgba(0,200,232,0.7)',  borderRadius: 5, borderSkipped: false }
+      ]
+    },
+    options: { ...baseOpts(), plugins: { legend: { display: true, position: 'top', labels:{padding:12,usePointStyle:true,pointStyleWidth:8} } } }
+  });
+
+  // ── YoY: Diag chart ──
+  const yoyDiags = ['Empyema thoracis','TTP','CA Small bowel','Sepsis','Cardiac arrest','AMI'];
+  new Chart(document.getElementById('chartDiagYoY'), {
+    type: 'bar',
+    data: {
+      labels: yoyDiags,
+      datasets: [
+        { label: 'Feb 2026', data: [1,1,1,0,0,0], backgroundColor: 'rgba(0,200,232,0.7)', borderRadius: 5, borderSkipped: false },
+        { label: 'Feb 2025', data: [0,0,0,1,1,1], backgroundColor: 'rgba(160,112,240,0.65)', borderRadius: 5, borderSkipped: false }
+      ]
+    },
+    options: {
+      ...baseOpts(),
+      indexAxis: 'y',
+      plugins: { legend: { display: true, position: 'top', labels:{padding:12,usePointStyle:true,pointStyleWidth:8} } },
+      scales: { x: { grid:{color:gridColor}, ticks:{stepSize:1,precision:0} }, y: { grid:{color:gridColor} } }
+    }
+  });
+
+  // YoY age scatter
+  const feb26Ages = d.feb26.cases.map(c=>c.age);
+  const feb25Ages = d.feb25.cases.map(c=>c.age);
+  new Chart(document.getElementById('chartAgeYoY'), {
+    type: 'bar',
+    data: {
+      labels: ['Case 1','Case 2','Case 3'],
+      datasets: [
+        { label: 'Feb 2026 age', data: feb26Ages, backgroundColor: 'rgba(0,200,232,0.7)', borderRadius: 5, borderSkipped: false },
+        { label: 'Feb 2025 age', data: feb25Ages, backgroundColor: 'rgba(160,112,240,0.65)', borderRadius: 5, borderSkipped: false }
+      ]
+    },
+    options: {
+      ...baseOpts({scales:{x:{grid:{color:gridColor}},y:{grid:{color:gridColor},beginAtZero:false,min:40,ticks:{callback:v=>v+'yr'}}}}),
+      plugins: { legend:{display:true,position:'top',labels:{padding:12,usePointStyle:true,pointStyleWidth:8}}, tooltip:{callbacks:{label:c=>` ${c.parsed.y} years`}} }
+    }
+  });
+
+  // YoY table
+  const tYoY = document.getElementById('tableYoY');
+  const yoyRows = [
+    ...d.feb26.cases.map(c=>({...c,year:'Feb 2026',yearClass:'cyan'})),
+    ...d.feb25.cases.map(c=>({...c,year:'Feb 2025',yearClass:'purple'}))
+  ];
+  tYoY.innerHTML = yoyRows.map(c=>`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--${c.yearClass})">${c.year}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:11px">${c.date}</td>
+    <td><span class="tag tag-dept">${c.dept}</span></td>
+    <td style="font-family:'DM Mono',monospace">${c.age}</td>
+    <td><span class="tag ${c.gender==='Female'?'tag-f':'tag-m'}">${c.gender}</span></td>
+    <td style="font-size:11px;white-space:normal;max-width:180px">${c.diag}</td>
+    <td>${c.los>0?`<span class="los-pill ${losClass(c.los)}">${c.los}d</span>`:'<span style="color:var(--dim)">—</span>'}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:11px">${c.cost>0?fmtTHB(c.cost):'<span style="color:var(--dim)">—</span>'}</td>
+  </tr>`).join('');
+
+  // ── TREND chart ──
+  const months = [1,2,3,4,5,6,7,8,9,10,11,12];
+  const trendVals = months.map(m => d.months25[m] || 0);
+  const ctx = document.getElementById('chartTrend').getContext('2d');
+  const gradient = ctx.createLinearGradient(0,0,0,280);
+  gradient.addColorStop(0,'rgba(0,200,232,0.2)');
+  gradient.addColorStop(1,'rgba(0,200,232,0)');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [...months.map(m=>MONTH_NAMES[m]+' 2025'),'Jan 2026','Feb 2026 ★'],
+      datasets: [
+        {
+          label: '2025 Deaths',
+          data: [...trendVals, null, null],
+          borderColor: 'var(--cyan)', backgroundColor: gradient,
+          pointBackgroundColor: trendVals.map(v=>v>=8?'var(--red)':v<=3?'var(--green)':'var(--cyan)'),
+          pointRadius: 5, tension: 0.35, fill: true, spanGaps: false
+        },
+        {
+          label: '2026',
+          data: [...months.map(()=>null), 1, 3],
+          borderColor: 'var(--gold)', backgroundColor: 'transparent',
+          pointBackgroundColor: 'var(--gold)',
+          pointRadius: 6, tension: 0.35,
+          borderDash: [6,3]
+        },
+        {
+          label: 'Avg (5.75)',
+          data: [...months.map(()=>5.75), 5.75, 5.75],
+          borderColor: 'rgba(107,117,144,0.4)', backgroundColor: 'transparent',
+          pointRadius: 0, tension: 0, borderDash: [4,4]
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: 'top', labels:{padding:16,usePointStyle:true,pointStyleWidth:8} }, tooltip:{callbacks:{label:c=>c.raw!==null?` ${c.raw} deaths`:''}} },
+      scales: { x:{grid:{color:gridColor}}, y:{grid:{color:gridColor},beginAtZero:true,ticks:{stepSize:1,precision:0}} }
+    }
+  });
+
+  // Trend table
+  const tTrend = document.getElementById('trendTableBody');
+  let cumulative = 0;
+  const avg = 5.75;
+  tTrend.innerHTML = months.map(m => {
+    const cnt = d.months25[m] || 0;
+    cumulative += cnt;
+    const diff = cnt - avg;
+    const diffStr = diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2);
+    const diffClass = diff > 2 ? 'cell-high' : diff < -2 ? 'cell-low' : 'cell-mid';
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace">${MONTH_NAMES[m]} 2025</td>
+      <td class="${cnt>=8?'cell-high':cnt<=3?'cell-low':'cell-mid'}">${cnt}</td>
+      <td class="${diffClass}">${diffStr}</td>
+      <td style="color:var(--muted)">${cumulative}</td>
+    </tr>`;
+  }).join('');
+
+  // ── CASE TABLE: All 2026 ──
+  const t2026 = document.getElementById('tableAll2026');
+  const all2026 = [...d.jan26.cases, ...d.feb26.cases].sort((a,b)=>a.date.localeCompare(b.date));
+  t2026.innerHTML = all2026.map(c=>`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:11px">${c.date}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${c.hn}</td>
+    <td><span class="tag tag-dept">${c.dept}</span></td>
+    <td style="color:var(--muted)">${c.ward}</td>
+    <td><span class="tag ${c.gender==='Female'?'tag-f':'tag-m'}">${c.gender}</span></td>
+    <td style="font-family:'DM Mono',monospace">${c.age}</td>
+    <td style="font-size:11px;white-space:normal;max-width:160px">${c.diag}</td>
+    <td>${c.los>0?`<span class="los-pill ${losClass(c.los)}">${c.los}d</span>`:'<span style="color:var(--dim)">—</span>'}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:11px">${c.cost>0?fmtTHB(c.cost):'—'}</td>
+    <td style="white-space:normal;max-width:140px">${(c.comorbid||[]).map(x=>`<span class="tag tag-yes" style="font-size:9px">${x}</span>`).join('')||'<span style="color:var(--dim)">—</span>'}</td>
+    <td style="white-space:normal;max-width:140px">${(c.complic||[]).map(x=>`<span class="tag tag-yes" style="font-size:9px">${x}</span>`).join('')||'<span style="color:var(--dim)">—</span>'}</td>
+  </tr>`).join('');
+
+  // Case table: All 2025
+  const t2025 = document.getElementById('tableAll2025');
+  t2025.innerHTML = d.whole25.cases.map(c=>`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:11px">${c.date}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${c.hn}</td>
+    <td><span class="tag tag-dept">${c.dept.length>22?c.dept.slice(0,20)+'…':c.dept}</span></td>
+    <td style="color:var(--muted)">${c.ward}</td>
+    <td><span class="tag ${c.gender==='Female'?'tag-f':'tag-m'}">${c.gender}</span></td>
+    <td style="font-family:'DM Mono',monospace">${c.age}</td>
+    <td style="font-size:11px;white-space:normal;max-width:200px">${c.diag}</td>
+  </tr>`).join('');
+}
+
+init();
+</script>
+</body>
+</html>
